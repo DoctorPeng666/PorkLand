@@ -89,6 +89,22 @@ PrefabFiles = {
     "waterdrop",
     "weevole_carapace",
     "weevole",
+
+    --roc related prefabs
+    "roc_nest",
+
+    "birdwhistle",
+
+    "roc",
+    "roc_leg",
+    "roc_head",
+    "roc_tail",
+
+    "ro_bin",
+    "ro_bin_gizzard_stone",
+    "roc_robin_egg",
+
+
 }
 
 Assets = {
@@ -97,7 +113,7 @@ Assets = {
 
     -- inventoryimages
     Asset("ATLAS", "images/hud/pl_inventoryimages.xml"),
-    Asset("ATLAS_BUILD", "images/hud/pl_inventoryimages.xml", 256),  -- for minisign
+    Asset("ATLAS_BUILD", "images/hud/pl_inventoryimages.xml", 256), -- for minisign
 
     -- boat
     Asset("ATLAS", "images/hud/pl_hud.xml"),
@@ -107,15 +123,15 @@ Assets = {
     Asset("ATLAS", "images/hud/pl_crafting_menu_icons.xml"),
 
     -- hud
-    Asset("ATLAS", "images/overlays/fx3.xml"),  -- poison, boat_over
+    Asset("ATLAS", "images/overlays/fx3.xml"),         -- poison, boat_over
     Asset("IMAGE", "images/overlays/fx3.tex"),
-    Asset("ATLAS", "images/overlays/fx4.xml"),  -- pollen(hayfever)
+    Asset("ATLAS", "images/overlays/fx4.xml"),         -- pollen(hayfever)
     Asset("IMAGE", "images/overlays/fx4.tex"),
-    Asset("ATLAS", "images/overlays/fx5.xml"),  -- fog
+    Asset("ATLAS", "images/overlays/fx5.xml"),         -- fog
     Asset("IMAGE", "images/overlays/fx5.tex"),
-    Asset("ANIM", "anim/leaves_canopy2.zip"),  --canopy
+    Asset("ANIM", "anim/leaves_canopy2.zip"),          --canopy
 
-    Asset("ANIM", "anim/moon_aporkalypse_phases.zip"),  -- blood moon
+    Asset("ANIM", "anim/moon_aporkalypse_phases.zip"), -- blood moon
 
     -- player_actions
     Asset("ANIM", "anim/player_idles_poison.zip"),
@@ -131,6 +147,10 @@ Assets = {
     Asset("ANIM", "anim/player_boat_death.zip"),
     Asset("ANIM", "anim/werebeaver_boat_death.zip"),
     Asset("ANIM", "anim/player_lifeplant.zip"),
+
+    Asset("ANIM", "anim/player_actions_bucked.zip"),
+    Asset("ANIM", "anim/player_teleport_bfb.zip"),
+    Asset("ANIM", "anim/player_teleport_bfb2.zip"),
 
     -- boat ui
     Asset("ANIM", "anim/boat_health.zip"),

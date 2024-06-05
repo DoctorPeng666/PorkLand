@@ -46,6 +46,8 @@ local component_posts = {
     "wavemanager",
     "wisecracker",
     "worldstate",
+
+    "hatchable",
 }
 
 local prefab_posts = {

@@ -77,8 +77,8 @@ local function common_postinit(inst)
 
     -- Add waves
     inst.entity:AddWaveComponent()
-    inst.WaveComponent:SetWaveParams(13.5, 2.5, -1)  -- wave texture u repeat, forward distance between waves
-    inst.WaveComponent:SetWaveSize(80, 3.5)  -- wave mesh width and height
+    inst.WaveComponent:SetWaveParams(13.5, 2.5, -1) -- wave texture u repeat, forward distance between waves
+    inst.WaveComponent:SetWaveSize(80, 3.5)         -- wave mesh width and height
     inst.WaveComponent:SetWaveMotion(3, 0.5, 0.25)
     inst.WaveComponent:SetWaveTexture(resolvefilepath("images/could/fog_cloud.tex"))
     -- See source\game\components\WaveRegion.h
@@ -141,6 +141,9 @@ local function master_postinit(inst)
     if METRICS_ENABLED then
         inst:AddComponent("worldoverseer")
     end
+
+    inst:AddComponent("rocmanager")
 end
 
-return MakeWorld("porkland", prefabs, assets, common_postinit, master_postinit, {"porkland"}, {tile_physics_init = tile_physics_init})
+return MakeWorld("porkland", prefabs, assets, common_postinit, master_postinit, { "porkland" },
+    { tile_physics_init = tile_physics_init })
