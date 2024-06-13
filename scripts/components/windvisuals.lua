@@ -2,9 +2,9 @@ local windfx_spawn_rate = 0
 local windfx_spawn_per_sec = 16
 
 local WindVisuals = Class(function(self, inst)
-	self.inst = inst
+    self.inst = inst
 
-	inst:StartUpdatingComponent(self)
+    inst:StartUpdatingComponent(self)
 end)
 
 function WindVisuals:SpawnWindSwirl(x, y, z, angle)
@@ -15,8 +15,11 @@ end
 
 function WindVisuals:OnUpdate(dt)
     -- No need to check for plateauwind component, WindVisuals is only added in Hamlet
+    if not TheWorld.net.components.plateauwind then
+        return
+    end
     local windspeed = TheWorld.net.components.plateauwind:GetWindSpeed()
-    if windspeed > 0.01 and TheWorld.net.components.plateauwind:GetIsWindy() then
+    if windspeed and windspeed > 0.01 and TheWorld.net.components.plateauwind:GetIsWindy() then
         windfx_spawn_rate = windfx_spawn_rate + windfx_spawn_per_sec * dt
         if windfx_spawn_rate > 1.0 then
             local px, py, pz = self.inst.Transform:GetWorldPosition()

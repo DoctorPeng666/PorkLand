@@ -30,3 +30,7 @@ AddReplicableComponent("sailor")
 AddReplicableComponent("sailable")
 AddReplicableComponent("boathealth")
 AddReplicableComponent("boatcontainer")
+
+
+
+modimport("postinit/widgets/hoverer_info") ---- show name and anim, for debugging

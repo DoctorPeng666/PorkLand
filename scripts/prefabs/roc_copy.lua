@@ -1,3 +1,4 @@
+---大鹏会被虚空卡主
 require "stategraphs/SGroc"
 
 local assets =
@@ -35,50 +36,50 @@ local function scalefn(inst, scale)
 end
 
 local function OnRemoved(inst)
-	local self = TheWorld.components.rocmanager
+	local self = TheWorld.components.rocmanager --为什么可能检测不到呢
 	if self then
 		self:RemoveRoc(inst)
 		self.nexttime = self:GetNextSpawnTime()
 	end
 end
 
-local function OnEntitySleep(inst) --需要把这一块挪到controller里
+local function OnEntitySleep(inst)
 	local self = inst.components.roccontroller
 	print(self.stage, "check entity sleep stage!!!!!!!!!!!")
-	if self and (self.stage ~= self._stages.finding_object) then
-		if self.head then
-			self.head:Remove()
-			print("removehead!!!")
-		end
-		if self.tail then
-			self.tail:Remove()
-			print("remove1!!!")
-		end
-		if self.leg1 then
-			self.leg1:Remove()
-			print("remove2!!!")
-		end
-		if self.leg2 then
-			self.leg2:Remove()
-			print("remove3!!!")
-		end
+	inst:DoTaskInTime(1, function(inst) --延迟一下再移除，也是保证重新加载存档时正常执行 (保证self.stage load完毕)
+		if self and (self.stage ~= self._stages.finding_object) then
+			if self.head then
+				self.head:Remove()
+				print("removehead!!!")
+			end
+			if self.tail then
+				self.tail:Remove()
+				print("remove1!!!")
+			end
+			if self.leg1 then
+				self.leg1:Remove()
+				print("remove2!!!")
+			end
+			if self.leg2 then
+				self.leg2:Remove()
+				print("remove3!!!")
+			end
 
 
-		inst.bodyparts = nil
-		inst:Remove()
-	end
+			inst.bodyparts = nil
+			inst:Remove()
+		end
+	end)
 end
 
-function MakeNoPhysics(inst, mass, rad)
-	local physics = inst.entity:AddPhysics()
-	physics:SetMass(mass)
-	physics:SetCapsule(rad, 1)
-	inst.Physics:SetFriction(0)
-	inst.Physics:SetDamping(5)
-	inst.Physics:SetCollisionGroup(COLLISION.CHARACTERS) -------CHARACTERS
-	inst.Physics:ClearCollisionMask()
-	inst.Physics:CollidesWith(COLLISION.GROUND)
-	inst.Physics:ClearCollidesWith(COLLISION.VOID_LIMITS)
+local function MakeNoPhysics(inst, mass, rad)
+    local physics = inst.entity:AddPhysics()
+    physics:SetMass(mass)
+    physics:SetCapsule(rad, 1)
+    inst.Physics:SetFriction(0)
+    inst.Physics:SetDamping(5)
+    inst.Physics:SetCollisionGroup(COLLISION.CHARACTERS)
+    inst.Physics:ClearCollisionMask()
 end
 
 local function fn(Sim)
@@ -90,7 +91,8 @@ local function fn(Sim)
 	inst.entity:AddNetwork()
 
 	MakeNoPhysics(inst, 10, 1.5)
-	-- RemovePhysicsColliders(inst)
+	RemovePhysicsColliders(inst)
+
 
 	inst.Transform:SetScale(1.5, 1.5, 1.5)
 
@@ -134,7 +136,7 @@ local function fn(Sim)
 
 	inst:AddComponent("knownlocations")
 
-	inst:AddComponent("areaaware")
+	inst:AddComponent("areaaware") --不是area_aware
 
 	inst:ListenForEvent("onremove", OnRemoved)
 

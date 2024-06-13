@@ -1,7 +1,5 @@
 -- local easing = require("easing")
---遗留问题：roc动画不会转向？ 确实不会
---roc的碰撞体积问题
---传送时间可能太早了
+--遗留问题：roc动画不会转向？
 --脚还是会踩水
 --onsave onload修改
 --FindClosestPlayerToInst统一距离？
@@ -9,7 +7,6 @@
 --finding_object时期的tile检测还是不对
 --飞走的时候逐渐缩小
 --GetDistanceSqToInst需要isvalid判断，真恶心。何必呢
---还是需要判定landed
 
 --注意事项：鸟巢的生成不能离海太近，附近不要有敌对生物
 
@@ -42,7 +39,6 @@ local _stages = {
 	taking_off = 5,
 	flying_away = 6
 	-- flying_to_nest = 6,
-	-- arriving_nest = 6,
 	-- landing_again = 7,
 	-- disgrabbing_player = 8,
 	-- taking_off_away = 9,
@@ -85,33 +81,23 @@ end)
 
 
 
--- local help functions
--- local function IsHamTile(tile)
--- 	return PL_LAND_TILES[tile] or false --有没有定义好的函数
--- end
+-------------------local help functions
+local function IsHamTile(tile)
+	return PL_LAND_TILES[tile] or false --有没有定义好的函数
+end
 
--- local function IsCityTile(tile)
--- 	return tile == GROUND.FOUNDATION or tile == GROUND.COBBLEROAD or tile == GROUND.LAWN or tile == GROUND.FIELDS
--- end
+local function IsCityTile(tile)
+	return tile == GROUND.FOUNDATION or tile == GROUND.COBBLEROAD or tile == GROUND.LAWN or tile == GROUND.FIELDS
+end
 
 local function IsValidTile(tile)
-	return --[[IsHamTile(tile) and not IsCityTile(tile) -- and]] IsLandTile(tile) and not (tile == GROUND.FOUNDATION or
-		tile == GROUND.COBBLEROAD or tile == GROUND.LAWN or tile == GROUND.DEEPRAINFOREST or tile == GROUND.GASJUNGLE)
+	return --[[IsHamTile(tile) and not IsCityTile(tile) -- and]] IsLandTile(tile)
 end
 
 local function IsValidTileAtPoint(x, y, z)
 	local map = TheWorld.Map
 	local tile = map:GetTileAtPoint(x, y, z)
 	if IsValidTile(tile) then
-		return true
-	end
-	return false
-end
-
-local function IsValidDungTileAtPoint(x, y, z)
-	local map = TheWorld.Map
-	local tile = map:GetTileAtPoint(x, y, z)
-	if (tile == GROUND.RAINFOREST or tile == GROUND.PLAINS) then
 		return true
 	end
 	return false
@@ -145,39 +131,6 @@ local function IsCloseToInvalidTileAtPoint(x, y, z, radius)
 	return false
 end
 
-local function GetCLosestValidInstWithTag(inst, radius, musttag, canottag)
-	local pos = Vector3(inst.Transform:GetWorldPosition())
-	local ents = TheSim:FindEntities(pos.x, pos.y, pos.z, radius, musttag, canottag)
-	for i = #ents, 1, -1 do
-		if not ents[i].components.workable then
-			table.remove(ents, i)
-		end
-	end
-
-	local sorted = {}
-	local target = nil
-
-	if #ents > 0 then
-		for i, ent in ipairs(ents) do
-			if ent then
-				local x, y, z = ent.Transform:GetWorldPosition()
-				local tilevalid = IsValidTileAtPoint(x, y, z)
-
-				if tilevalid and ent:IsValid() then
-					table.insert(sorted, { ent, ent:GetDistanceSqToInst(inst) })
-				end
-			end
-		end
-		if #sorted > 0 then
-			table.sort(sorted, function(a, b) return a[2] > b[2] end)
-			target = sorted[#sorted][1]
-		end
-	end
-
-	return target
-end
-
-
 local function getanglepointtopoint(x1, z1, x2, z2)
 	local dz = z1 - z2
 	local dx = x2 - x1
@@ -201,10 +154,10 @@ local function FindClosestValidPlayerToInst(inst, range, isalive)
 	local rangesq = range * range
 	local closestPlayer = nil
 	for i, v in ipairs(AllPlayers) do
-		if (isalive == nil or isalive ~= IsEntityDeadOrGhost(v)) and v.entity:IsVisible() and IsValidPlayer(v) then
-			local pos = Vector3(inst.Transform:GetWorldPosition())
+		if (isalive == nil or isalive ~= IsEntityDeadOrGhost(v)) and
+			v.entity:IsVisible() then
 			local distsq = v:GetDistanceSqToPoint(x, y, z)
-			if distsq < rangesq and IsValidTileAtPoint(pos.x, pos.y, pos.z) then
+			if distsq < rangesq and IsValidPlayer(v) then
 				rangesq = distsq
 				closestPlayer = v
 			end
@@ -356,24 +309,36 @@ end
 function RocController:GetTarget() ------------更新
 	local bird = self.head or self.inst
 
-
+	--先找最近的，如果最近的不符合validtile再随机找一个
 	if not self.target or not self.target:IsValid() or self.target:HasTag("player") then
-		local target = GetCLosestValidInstWithTag(bird, 20, { "structure" })
-		if target and self.target:IsValid() then
-			self.target = target
+		local ent = GetClosestInstWithTag("structure", bird, 20) --or GetClosestInstWithTag("meat", bird, 20)
+		if ent and ent:IsValid() then
+			local x, y, z = ent.Transform:GetWorldPosition()
+			if IsCloseToValidTileAtPoint(x, y, z, 4) then
+				self.target = ent
+				return self.target
+			end
+		end
+		ent = GetRandomInstWithTag("structure", bird, 20) --or GetClosestInstWithTag("meat", bird, 20)
+		if ent and ent:IsValid() then
+			local x, y, z = ent.Transform:GetWorldPosition()
+			if IsCloseToValidTileAtPoint(x, y, z, 4) then
+				self.target = ent
+				return self.target
+			end
 		end
 	end
 
-	if self.target and self.target:IsValid() and (bird:GetDistanceSqToInst(self.target) <= 40 ^ 2) then
+
+	if self.target and self.target:IsValid() then
 		return self.target
 	end
 
-	local target = FindClosestValidPlayerToInst(bird, 40, true)
-	-- GetClosestInstWithTag("player", bird, 40)
-	-- if IsValidPlayer(target) then
-	self.target = target
-	return target
-	-- end
+	local ent = GetClosestInstWithTag("player", bird, 40)
+	if IsValidPlayer(ent) then
+		self.target = ent
+		return self.target
+	end
 end
 
 --[[ function RocController:GetTarget() ------------这个函数有大问题
@@ -393,19 +358,15 @@ end
 	return
 end ]]
 
-function RocController:Movebodyparts(dt)
-	if not self.head or self.head.sg:HasStateTag("busy") or not self.leg1 or not self.leg2 or not self.tail then
+function RocController:Movebodyparts(dt) --更新
+	if not self.head or not self.head.sg:HasStateTag("busy") or not self.leg1 or not self.leg2 or not self.tail then
 		return
 	end
-
-	local target = self:GetTarget() --[[or self.inst]]
-
-	if not target then
-		self.inst:PushEvent("takeoff")
-		self.stage = _stages.taking_off
+	-- if not self.head.sg:HasStateTag("busy") --[[and self.target and self.target:IsValid()]] then --为什么head会检测不到呢
+	local target = self:GetTarget() or self.inst
+	if not target or not self.target then --为什么会没有target呢
 		return
 	end
-
 	local targetpos = Vector3(target.Transform:GetWorldPosition())
 	local headdistsq = self.head:GetDistanceSqToInst(target)
 
@@ -438,7 +399,7 @@ function RocController:Movebodyparts(dt)
 	local offset = Vector3(HEAD_VEL * math.cos(angle), 0, -HEAD_VEL * math.sin(angle))
 	local pos = Vector3(self.head.Transform:GetWorldPosition())
 	self.head.Transform:SetPosition(pos.x + offset.x, 0, pos.z + offset.z)
-
+	-- end
 
 	-- BODY
 	local pos = Vector3(self.inst.Transform:GetWorldPosition())
@@ -579,28 +540,6 @@ function RocController:Movebodyparts(dt)
 end
 
 function RocController:OnEntitySleep()
-	-- if self.stage ~= self._stages.finding_object then
-	-- 	if self.head then
-	-- 		self.head:Remove()
-	-- 		print("removehead!!!")
-	-- 	end
-	-- 	if self.tail then
-	-- 		self.tail:Remove()
-	-- 	end
-	-- 	if self.leg1 then
-	-- 		self.leg1:Remove()
-	-- 	end
-	-- 	if self.leg2 then
-	-- 		self.leg2:Remove()
-	-- 	end
-
-
-	-- 	self.inst.bodyparts = nil
-	-- 	self.inst:Remove()
-	-- else
-	-- 	self:Stop()
-	-- end
-
 	self:Stop()
 end
 
@@ -667,7 +606,7 @@ function RocController:DoGrab_player()
 	if player and IsValidPlayer(player) then
 		local headdistsq = self.head:GetDistanceSqToInst(player)
 		if headdistsq < HEAD_EAT_DIST * HEAD_EAT_DIST then
-			self.stage = _stages.grabbing_player
+			-- self.stage = _stages.grabbing_player
 
 			player.Transform:SetRotation(self.head.Transform:GetRotation())
 			grab_player(player)
@@ -683,11 +622,6 @@ end
 function RocController:OnUpdate(dt)
 	print("stage!!!!!!!!!!!", self.stage)
 
-	local cx, cy, cz = self.inst.Transform:GetWorldPosition()
-	-- self.inst.Transform:SetPosition(cx, 0, cz)
-
-
-
 
 	if self.stage == _stages.initializing then
 		self.inst:PushEvent("fly")
@@ -696,24 +630,24 @@ function RocController:OnUpdate(dt)
 	end
 
 	if self.stage == _stages.navigating then
-		local player = FindClosestValidPlayerToInst(self.inst, 80, true) --[[or self.inst]]
-		if not player or TheWorld.state.isnight then
-			-- self.stage = _stages.flying_away
-			return
-		end
+		local player = FindClosestValidPlayerToInst(self.inst, 80, true) or self.inst
+		-- if not player then
+		-- 	self.stage = _stages.flying_away
+		-- 	return
+		-- end
 		local px, py, pz = player.Transform:GetWorldPosition()
-
-		-- local onvalidtiles = IsCloseToValidTileAtPoint(px, py, pz, 8)
+		local cx, cy, cz = self.inst.Transform:GetWorldPosition()
+		local onvalidtiles = IsCloseToValidTileAtPoint(px, py, pz, 8)
 
 		local disttoplayer = self.inst:GetDistanceSqToInst(player)
 		if disttoplayer > SCREEN_DIST * SCREEN_DIST then
 			self.inst.Transform:SetRotation(self.inst:GetAngleToPoint(px, py, pz))
 		end
 
-		-- if not onvalidtiles or TheWorld.state.isnight then
-		-- 	self.stage = _stages.flying_away
-		-- 	return
-		-- end
+		if not onvalidtiles or TheWorld.state.isnight then
+			self.stage = _stages.flying_away
+			return
+		end
 
 		if self.scaleup then
 			local currentscale = self.inst.Transform:GetScale()
@@ -726,12 +660,14 @@ function RocController:OnUpdate(dt)
 		end
 
 		local dungok = true --添加自定义选项
-		local onvaliddungtiles = IsValidDungTileAtPoint(cx, cy, cz)
+
+		local onvaliddungtiles = IsValidTileAtPoint(cx, cy, cz)
 		if onvaliddungtiles and dungok then
 			if self.dungtime > 0 then
 				self.dungtime = math.max(self.dungtime - dt, 0)
 			else
-				local ents = TheSim:FindEntities(cx, cy, cz, 50, { "dungpile" })
+				local pos = Vector3(self.inst.Transform:GetWorldPosition())
+				local ents = TheSim:FindEntities(pos.x, pos.y, pos.z, 50, { "dungpile" })
 				if #ents < 2 then
 					self.inst:DoTaskInTime(1 + Remap(self.inst.Transform:GetScale(), 0.35, 1, 2, 0), function()
 						local crap = SpawnPrefab("dungpile")

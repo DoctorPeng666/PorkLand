@@ -13,6 +13,7 @@ local assets =
 
     Asset("SOUND", "sound/chester.fsb"),
     Asset("INV_IMAGE", "chester_eyebone"),
+
     Asset("INV_IMAGE", "chester_eyebone_closed"),
 }
 
@@ -95,7 +96,7 @@ local function OnEntitySleep(inst)
     end
 end
 
-function MakeFlyerPhysics(inst, mass, rad)
+local function MakeFlyerPhysics(inst, mass, rad)
     local physics = inst.entity:AddPhysics()
     physics:SetMass(mass)
     physics:SetCapsule(rad, 1)
@@ -103,7 +104,14 @@ function MakeFlyerPhysics(inst, mass, rad)
     inst.Physics:SetDamping(5)
     inst.Physics:SetCollisionGroup(COLLISION.CHARACTERS) -------CHARACTERS
     inst.Physics:ClearCollisionMask()
+
     inst.Physics:CollidesWith(COLLISION.GROUND)
+    inst.Physics:CollidesWith(COLLISION.OBSTACLES)
+    inst.Physics:CollidesWith(COLLISION.SMALLOBSTACLES)
+    inst.Physics:CollidesWith(COLLISION.CHARACTERS) --最好避免与玩家碰撞
+    inst.Physics:CollidesWith(COLLISION.GIANTS)
+    -- inst.Physics:ClearCollidesWith(COLLISION.VOID_LIMITS) --是否可以跨越云海
+    inst.Physics:ClearCollidesWith(COLLISION.LAND_OCEAN_LIMITS)
 end
 
 local function create_ro_bin()
@@ -132,8 +140,8 @@ local function create_ro_bin()
     inst.DynamicShadow:SetSize(2, 1.5)
 
     --    MakePoisonableCharacter(inst)
-
     MakeFlyerPhysics(inst, 75, .5)
+    -- MakeFlyingCharacterPhysics(inst, 75, .5)
 
     inst.Transform:SetFourFaced()
 
@@ -204,6 +212,10 @@ local function create_ro_bin()
 
     inst:AddComponent("tiletracker")
     inst.components.tiletracker:SetOnWaterChangeFn(OnWaterChange)
+
+    inst.CanOnWater = function() return true end
+    inst.CanOnLand = function() return true end
+    inst.CanOnImpassable = function() return true end
 
     return inst
 end
